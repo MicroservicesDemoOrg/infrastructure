@@ -36,7 +36,8 @@ services:
         ports:
             - "8090:8090"
         depends_on:
-            -  postgres
+            - postgres
+            - eureka-server
             
     question-service:
         image: questionservice:latest
@@ -45,6 +46,7 @@ services:
             - "8081:8081"
         depends_on:
             - postgres
+            - eureka-server
             
     api-gateway:
         image: apigateway:latest
@@ -54,3 +56,4 @@ services:
         depends_on:
             - quiz-service
             - question-service
+            - eureka-server
