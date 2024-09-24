@@ -1,59 +1,75 @@
-version: '3'
+version: '3.8'  # Change this line
+
 services:
-    postgres:
-        image:  postgres
-        container_name: postgres_container
-        ports:
-            - "5432:5432"
-        environment:
-            POSTGRES_PASSWORD: root
-            POSTGRES_USER: admin
-       
-    pgadmin:
-        image: dpage/pgadmin4
-        container_name: pgadmin_container
-        restart: always
-        ports:
-            - "8888:8080"
-        environment:
-            PGADMIN_DEFAULT_EMAIL: kanchan@gmail.com
-            PGADMIN_DEFAULT_PASSWORD: root
-            PGADMIN_LISTEN_PORT: 8080
-        depends_on:
-            - postgres
-            
-    eureka-server:
-        image: eurekaserver:latest
-        container_name: eurekaserver_container
-        ports:
-            - "8341:8341"
-        depends_on:
-            - postgres
-            
-    quiz-service:
-        image: quizservice:latest
-        container_name: quizservice_container
-        ports:
-            - "8090:8090"
-        depends_on:
-            - postgres
-            - eureka-server
-            
-    question-service:
-        image: questionservice:latest
-        container_name: questionservice_container
-        ports:
-            - "8081:8081"
-        depends_on:
-            - postgres
-            - eureka-server
-            
-    api-gateway:
-        image: apigateway:latest
-        container_name: apigateway_container
-        ports:
-            - "8756:8756"
-        depends_on:
-            - quiz-service
-            - question-service
-            - eureka-server
+  postgres:
+    image: postgres
+    container_name: postgres_container
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: admin
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_container
+    restart: always
+    ports:
+      - "8888:8080"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: kanchan@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: root
+      PGADMIN_LISTEN_PORT: 8080
+    depends_on:
+      - postgres
+
+  eureka-server:
+    build:
+      context: ../eurekaServer
+      dockerfile: Dockerfile
+    container_name: eurekaserver_container
+    ports:
+      - "8341:8341"
+    depends_on:
+      - postgres
+
+  quiz-service:
+    build:
+      context: ../quizMicroService
+      dockerfile: Dockerfile
+    container_name: quizservice_container
+    ports:
+      - "8090:8090"
+    depends_on:
+      - postgres
+      - eureka-server
+      - pgadmin
+
+  question-service:
+    build:
+      context: ../questionService
+      dockerfile: Dockerfile
+    container_name: questionservice_container
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+      - eureka-server
+      - pgadmin
+
+  api-gateway:
+    build:
+      context: ./apiGateway
+      dockerfile: Dockerfile
+    container_name: apigateway_container
+    ports:
+      - "8756:8756"
+    depends_on:
+      - quiz-service
+      - question-service
+      - eureka-server
